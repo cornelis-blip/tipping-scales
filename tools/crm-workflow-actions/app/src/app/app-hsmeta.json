@@ -1,0 +1,36 @@
+{
+  "uid": "tipping_scales_crm_toolkit_app",
+  "type": "app",
+  "config": {
+    "name": "CRM Toolkit — Workflow Actions",
+    "description": "Small, single-purpose workflow actions that wrap the CRM API: search for a record, get a property value, delete a record, and batch-update a property. Each action has dropdowns for the object type and property so it's reusable across portals without touching code. Private/internal app — execution routes to your own backend (see the tool's backend/).",
+    "distribution": "private",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["https://app.hubspot.com/oauth/CHANGE-ME-PORTAL-ID/callback"],
+      "requiredScopes": [
+        "oauth",
+        "automation",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "tickets"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.hubapi.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "cornelis@growth-pad.com",
+      "documentationUrl": "https://github.com/cornelis-blip/tipping-scales/tree/main/tools/crm-workflow-actions",
+      "supportUrl": "https://github.com/cornelis-blip/tipping-scales/tree/main/tools/crm-workflow-actions"
+    }
+  }
+}

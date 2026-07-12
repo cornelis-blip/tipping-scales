@@ -33,6 +33,14 @@ Practical, reusable solutions to real HubSpot problems — the kind that show up
 2. **Integrations** — connecting HubSpot to external services (SMS, telephony, APIs) two ways.
 3. **Custom code done properly** — patterns for reliability: retries/backoff, idempotency, HubDB at scale.
 
+### Tools
+
+| Tool | What it solves |
+|---|---|
+| [hubdb-lookup](tools/hubdb-lookup) | HubDB lookups that silently drop rows past 1,000 — filtered, at any table size. |
+| [sms-fanout](tools/sms-fanout) | One Twilio number can only POST to one webhook — broadcast inbound SMS to HubSpot *and* a shared inbox. |
+| [crm-workflow-actions](tools/crm-workflow-actions) | An uploadable app: small, dropdown-driven workflow actions for search / get / delete / batch-update. |
+
 ---
 
 ## Structure

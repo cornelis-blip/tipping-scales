@@ -1,0 +1,77 @@
+{
+  "uid": "crm_batch_update",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://YOUR-BACKEND-HOST/action/batch-update?k=CHANGE-ME-ACTION-SECRET",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "objectType",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Contacts", "value": "contacts" },
+            { "label": "Companies", "value": "companies" },
+            { "label": "Deals", "value": "deals" },
+            { "label": "Tickets", "value": "tickets" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "recordIds", "type": "string", "fieldType": "textarea" },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "property",
+          "type": "enumeration",
+          "fieldType": "select",
+          "externalOptions": true,
+          "optionsUrl": "https://YOUR-BACKEND-HOST/options?k=CHANGE-ME-ACTION-SECRET"
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "value", "type": "string", "fieldType": "text" },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": true
+      }
+    ],
+    "outputFields": [
+      { "typeDefinition": { "name": "updatedCount", "type": "number", "fieldType": "number" } },
+      { "typeDefinition": { "name": "status", "type": "string", "fieldType": "text" } },
+      { "typeDefinition": { "name": "errorCode", "type": "string", "fieldType": "text" } }
+    ],
+    "objectTypes": ["CONTACT", "COMPANY", "DEAL", "TICKET"],
+    "labels": {
+      "en": {
+        "actionName": "CRM: Batch-update a property",
+        "actionDescription": "Sets the same property to the same value on many records at once (up to 100 per call), given a comma-separated list of record IDs.",
+        "actionCardContent": "Set {{property}} on {{objectType}} records",
+        "inputFieldLabels": {
+          "objectType": "Object type",
+          "recordIds": "Record IDs (comma-separated)",
+          "property": "Property to set",
+          "value": "New value"
+        },
+        "inputFieldDescriptions": {
+          "objectType": "Which CRM object the records belong to.",
+          "recordIds": "Comma-separated record IDs. Often mapped from a property that collected them, or a prior Search step.",
+          "property": "Choose the object type first — properties load dynamically for it.",
+          "value": "The value to write to every listed record."
+        },
+        "outputFieldLabels": {
+          "updatedCount": "Records updated",
+          "status": "Status",
+          "errorCode": "Error code"
+        }
+      }
+    }
+  }
+}

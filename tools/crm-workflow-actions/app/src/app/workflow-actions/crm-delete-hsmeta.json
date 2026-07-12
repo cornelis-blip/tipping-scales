@@ -1,0 +1,74 @@
+{
+  "uid": "crm_delete_record",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://YOUR-BACKEND-HOST/action/delete?k=CHANGE-ME-ACTION-SECRET",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "objectType",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Contacts", "value": "contacts" },
+            { "label": "Companies", "value": "companies" },
+            { "label": "Deals", "value": "deals" },
+            { "label": "Tickets", "value": "tickets" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "recordId", "type": "string", "fieldType": "text" },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "confirm", "type": "string", "fieldType": "text" },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      }
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "deleted",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Deleted", "value": "true" },
+            { "label": "Not deleted", "value": "false" }
+          ]
+        }
+      },
+      { "typeDefinition": { "name": "status", "type": "string", "fieldType": "text" } },
+      { "typeDefinition": { "name": "errorCode", "type": "string", "fieldType": "text" } }
+    ],
+    "objectTypes": ["CONTACT", "COMPANY", "DEAL", "TICKET"],
+    "labels": {
+      "en": {
+        "actionName": "CRM: Delete a record",
+        "actionDescription": "Deletes a record by ID. Guard rail: the record is only deleted when the confirmation field contains the exact word DELETE.",
+        "actionCardContent": "Delete {{objectType}} #{{recordId}}",
+        "inputFieldLabels": {
+          "objectType": "Object type",
+          "recordId": "Record ID",
+          "confirm": "Type DELETE to confirm"
+        },
+        "inputFieldDescriptions": {
+          "objectType": "Which CRM object the record belongs to.",
+          "recordId": "The record's ID. Can be a static value or mapped from a workflow property.",
+          "confirm": "Safety check. The action only deletes when this field is exactly DELETE."
+        },
+        "outputFieldLabels": {
+          "deleted": "Deleted?",
+          "status": "Status",
+          "errorCode": "Error code"
+        }
+      }
+    }
+  }
+}

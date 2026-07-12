@@ -1,0 +1,104 @@
+{
+  "uid": "crm_search_records",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://YOUR-BACKEND-HOST/action/search?k=CHANGE-ME-ACTION-SECRET",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "objectType",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Contacts", "value": "contacts" },
+            { "label": "Companies", "value": "companies" },
+            { "label": "Deals", "value": "deals" },
+            { "label": "Tickets", "value": "tickets" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "property",
+          "type": "enumeration",
+          "fieldType": "select",
+          "externalOptions": true,
+          "optionsUrl": "https://YOUR-BACKEND-HOST/options?k=CHANGE-ME-ACTION-SECRET"
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "operator",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "equals", "value": "EQ" },
+            { "label": "does not equal", "value": "NEQ" },
+            { "label": "greater than", "value": "GT" },
+            { "label": "greater than or equal", "value": "GTE" },
+            { "label": "less than", "value": "LT" },
+            { "label": "less than or equal", "value": "LTE" },
+            { "label": "contains", "value": "CONTAINS_TOKEN" },
+            { "label": "is known", "value": "HAS_PROPERTY" },
+            { "label": "is unknown", "value": "NOT_HAS_PROPERTY" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "value", "type": "string", "fieldType": "text" },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": false
+      }
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "found",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Found", "value": "true" },
+            { "label": "Not found", "value": "false" }
+          ]
+        }
+      },
+      { "typeDefinition": { "name": "recordId", "type": "string", "fieldType": "text" } },
+      { "typeDefinition": { "name": "total", "type": "number", "fieldType": "number" } },
+      { "typeDefinition": { "name": "errorCode", "type": "string", "fieldType": "text" } }
+    ],
+    "objectTypes": ["CONTACT", "COMPANY", "DEAL", "TICKET"],
+    "labels": {
+      "en": {
+        "actionName": "CRM: Search for a record",
+        "actionDescription": "Searches the chosen object for the first record matching a property filter. Outputs the record id and total match count.",
+        "actionCardContent": "Search {{objectType}} where {{property}} {{operator}}",
+        "inputFieldLabels": {
+          "objectType": "Object type",
+          "property": "Property to filter on",
+          "operator": "Operator",
+          "value": "Value"
+        },
+        "inputFieldDescriptions": {
+          "objectType": "Which CRM object to search.",
+          "property": "Choose the object type first — properties load dynamically for it.",
+          "operator": "How to compare the property to the value.",
+          "value": "The value to match. Leave blank for \"is known\" / \"is unknown\"."
+        },
+        "outputFieldLabels": {
+          "found": "Match found?",
+          "recordId": "Record ID (first match)",
+          "total": "Total matches",
+          "errorCode": "Error code"
+        }
+      }
+    }
+  }
+}

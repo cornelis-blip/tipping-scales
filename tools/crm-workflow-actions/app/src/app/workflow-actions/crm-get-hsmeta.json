@@ -1,0 +1,80 @@
+{
+  "uid": "crm_get_property",
+  "type": "workflow-action",
+  "config": {
+    "actionUrl": "https://YOUR-BACKEND-HOST/action/get?k=CHANGE-ME-ACTION-SECRET",
+    "isPublished": true,
+    "supportedClients": [{ "client": "WORKFLOWS" }],
+    "inputFields": [
+      {
+        "typeDefinition": {
+          "name": "objectType",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Contacts", "value": "contacts" },
+            { "label": "Companies", "value": "companies" },
+            { "label": "Deals", "value": "deals" },
+            { "label": "Tickets", "value": "tickets" }
+          ]
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": { "name": "recordId", "type": "string", "fieldType": "text" },
+        "supportedValueTypes": ["STATIC_VALUE", "OBJECT_PROPERTY"],
+        "isRequired": true
+      },
+      {
+        "typeDefinition": {
+          "name": "property",
+          "type": "enumeration",
+          "fieldType": "select",
+          "externalOptions": true,
+          "optionsUrl": "https://YOUR-BACKEND-HOST/options?k=CHANGE-ME-ACTION-SECRET"
+        },
+        "supportedValueTypes": ["STATIC_VALUE"],
+        "isRequired": true
+      }
+    ],
+    "outputFields": [
+      {
+        "typeDefinition": {
+          "name": "found",
+          "type": "enumeration",
+          "fieldType": "select",
+          "options": [
+            { "label": "Found", "value": "true" },
+            { "label": "Not found", "value": "false" }
+          ]
+        }
+      },
+      { "typeDefinition": { "name": "value", "type": "string", "fieldType": "text" } },
+      { "typeDefinition": { "name": "errorCode", "type": "string", "fieldType": "text" } }
+    ],
+    "objectTypes": ["CONTACT", "COMPANY", "DEAL", "TICKET"],
+    "labels": {
+      "en": {
+        "actionName": "CRM: Get a property value",
+        "actionDescription": "Reads a single property from any record by ID. Useful for pulling a value off an associated record into the workflow.",
+        "actionCardContent": "Get {{property}} from {{objectType}} #{{recordId}}",
+        "inputFieldLabels": {
+          "objectType": "Object type",
+          "recordId": "Record ID",
+          "property": "Property to read"
+        },
+        "inputFieldDescriptions": {
+          "objectType": "Which CRM object the record belongs to.",
+          "recordId": "The record's ID. Can be a static value or mapped from a workflow property.",
+          "property": "Choose the object type first — properties load dynamically for it."
+        },
+        "outputFieldLabels": {
+          "found": "Record found?",
+          "value": "Property value",
+          "errorCode": "Error code"
+        }
+      }
+    }
+  }
+}
