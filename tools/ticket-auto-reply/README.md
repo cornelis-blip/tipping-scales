@@ -2,7 +2,7 @@
 
 **Send an automated reply into a ticket's conversation thread from a workflow — the Service Hub automation HubSpot doesn't give you natively.**
 
-> ⏳ **Valid as of July 2026 — expect to rework this around 2026-09-23.** HubSpot has a breaking
+> **Valid as of July 2026 — expect to rework this around 2026-09-23.** HubSpot has a breaking
 > change to the Conversations API for **Help Desk**-associated threads landing on that date. This
 > tool works today, but it is explicitly *not* evergreen. See "The moving target" below.
 
@@ -19,7 +19,7 @@ You can't invoke a Macro object via API, but you **can** reproduce the outcome: 
 workflow, post a reply into the ticket's conversation thread via the Conversations API. Pair it with a
 normal "set property" workflow step to cover the property side of a macro.
 
-## ⚠️ Dangers — think before you automate this
+## Dangers — think before you automate this
 
 Auto-replying **without a human reviewing** is the sharp edge, and it's arguably why HubSpot gates it:
 
