@@ -18,10 +18,42 @@ So the moment you need to **un-associate** records in bulk — cleaning up a bad
 mis-mapped import, detaching thousands of contacts from a company — you're on the API. This wraps the
 v4 batch endpoints so you can do it from a simple `fromId,toId` list.
 
-## Safety first
+## ⚠️ Dangers — read before you `--commit`
 
-Archiving associations is **not reversible**. So the runner is **dry-run by default** — it shows you
-exactly what it would do and touches nothing until you add `--commit`.
+Archiving associations is **destructive and not reversible.** You can re-create an association later,
+but only if you know exactly what it was (correct labels included) — there's no undo and no version
+history. Treat a bulk removal like a `DELETE` against production, because that's what it is.
+
+What a wrong run can silently break:
+
+- **Reporting & revenue attribution** — deals no longer tied to their contacts/companies drop out of
+  reports and source attribution.
+- **Active lists & segmentation** built on associated-record criteria.
+- **Workflows** that branch on associated-record properties — and, worse, workflows that *trigger on
+  association changes* can fire in bulk as you remove links.
+- **Territory / permission / ownership logic** that depends on who's associated with what.
+- **Integrations** that assume the links exist.
+
+Because it's batched, a bad input list does all of that **fast**.
+
+Mitigations (do these — they're cheap):
+
+1. **Snapshot first.** Export or read out the current associations before you archive, so you can
+   rebuild if you're wrong.
+2. **Dry-run, then read the summary.** It's the default; don't skip past it.
+3. **Test on 5–10 pairs** in the real portal before the full run.
+4. **Use `--archive-label` when you mean one label** — plain `--archive` removes *every* link between
+   the pair.
+5. **Run in a low-traffic window**, and check for association-triggered workflows first.
+
+### Why isn't bulk removal just native?
+
+My read (informed speculation): it's a deliberate safety decision, not an oversight. Adding a wrong
+association is cheap to undo; bulk-removing the wrong ones isn't, for all the reasons above. HubSpot
+ships the safe half (add via import / the 2024 workflow actions) and leaves the sharp half to the API,
+where a developer has to opt in on purpose. Associations are also typed and labeled now, so "remove
+the association" is genuinely ambiguous — hard to expose safely as a one-click button. This tool is
+that opt-in; the dry-run default is it keeping the same respect for the edge.
 
 ## Usage
 
