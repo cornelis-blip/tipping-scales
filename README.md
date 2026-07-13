@@ -41,6 +41,7 @@ Practical, reusable solutions to real HubSpot problems — the kind that show up
 | [sms-fanout](tools/sms-fanout) | One Twilio number can only POST to one webhook — broadcast inbound SMS to HubSpot *and* a shared inbox. |
 | [crm-workflow-actions](tools/crm-workflow-actions) | An uploadable app: small, dropdown-driven workflow actions for search / get / delete / batch-update. |
 | [bulk-associations](tools/bulk-associations) | Add — and *remove* — associations in bulk from a list, via the v4 batch API. The bulk removal no native tool does. |
+| [ticket-auto-reply](tools/ticket-auto-reply) | Auto-send a reply into a ticket's conversation from a workflow — the Service Hub automation HubSpot won't. *(Valid as of mid-2026; API change due Sept 2026.)* |
 
 ---
 
