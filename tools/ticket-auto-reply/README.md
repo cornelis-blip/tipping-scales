@@ -44,18 +44,31 @@ assume a rework around that date.
 
 | File | Use it when |
 |---|---|
-| [`custom-coded-action.js`](custom-coded-action.js) | You want a **ticket-workflow custom coded action**. Single-file, copy-paste. **Needs Operations Hub Pro/Enterprise.** |
-| [`webhook-handler.js`](webhook-handler.js) | You **don't** have Operations Hub. Deploy this behind a "Send a webhook" action (any Professional hub). Exports `handleWebhook`, `parseWebhookPayload`, `verifySharedSecret`, `lambdaHandler`, `nodeHandler`. |
-| [`ticket-auto-reply.js`](ticket-auto-reply.js) | Private app / serverless / script. Exports `autoReply`, `sendReply`, `deriveReplyContext`, `getLatestMessage`, `buildAgentActorId`, `resolveThreadIdForTicket`. |
+| [`custom-coded-action.js`](custom-coded-action.js) | Workflow-native. Single-file, copy-paste. **Needs Data Hub (Operations Hub) Pro/Enterprise.** |
+| [`webhook-handler.js`](webhook-handler.js) | You drive it from a "Send a webhook" workflow action. **Also needs Data Hub Pro/Enterprise** (that action is gated too). Exports `handleWebhook`, `parseWebhookPayload`, `verifySharedSecret`, `lambdaHandler`, `nodeHandler`. |
+| [`poller.js`](poller.js) | **The only path that needs no Data Hub.** External scheduled job — no workflow at all. Exports `runPoll`, `runFromEnv`, `searchTickets`, `processTicket`, `buildSearchRequest`, `markReplied`. |
+| [`ticket-auto-reply.js`](ticket-auto-reply.js) | Shared core reused by all three. Exports `autoReply`, `sendReply`, `deriveReplyContext`, `getLatestMessage`, `buildAgentActorId`, `resolveThreadIdForTicket`. |
 
 ## Subscription requirements — read this before you pick a file
 
-There are **two** gates, and they're separate:
+There are two gates, and this trips people up:
 
-- **The ticket workflow itself** needs **Service Hub Professional or Enterprise** (ticket-based workflows). You probably already have this.
-- **The custom coded action** (`custom-coded-action.js`) needs **Operations Hub Professional or Enterprise** — recently marketed under the "Data Hub" banner. A Service Hub subscription **alone will not** expose the custom-code step.
+- **The ticket workflow itself** needs **Service Hub Professional or Enterprise** (ticket-based workflows).
+- **Any in-workflow way to run this** needs **Data Hub Professional/Enterprise** (Data Hub is the current
+  name for Operations Hub). This catches **both** `custom-coded-action.js` *and* `webhook-handler.js` —
+  the **"Send a webhook" action is gated behind Data Hub too**, per HubSpot's own docs. It is *not*
+  available on a bare Sales/Service Pro subscription.
 
-If you're on **Service Hub Pro+ but not Operations Hub**, use the **webhook path** instead: a "Send a webhook" action is available in any Professional hub, and `webhook-handler.js` runs the identical logic on your own serverless endpoint. Same outcome, no Operations Hub licence.
+So if you're on **Service Hub Pro without Data Hub**, neither workflow route is available to you. The only
+option that avoids Data Hub is to **stop using a workflow trigger** and run [`poller.js`](poller.js) on a
+schedule instead. A private app token works on all tiers, so the poller needs no Data Hub licence — the
+trade is that *you* now own the scheduling, the dedupe, and the enrolment logic a workflow would handle.
+
+| Route | Needs Service Pro+ | Needs Data Hub Pro+ | You own scheduling/dedupe |
+|---|:---:|:---:|:---:|
+| `custom-coded-action.js` | ✅ | ✅ | — |
+| `webhook-handler.js` | ✅ | ✅ | — |
+| `poller.js` | — (any tier with API access) | ❌ **not needed** | ✅ |
 
 ## Setup (custom coded action)
 
@@ -65,7 +78,10 @@ If you're on **Service Hub Pro+ but not Operations Hub**, use the **webhook path
 3. Output fields: **`sent`** (enumeration), **`messageId`**, **`errorCode`**.
 4. Secret **`CONVERSATIONS_TOKEN`** — private app token with conversations read + write.
 
-## Setup (webhook — no Operations Hub)
+## Setup (webhook — still needs Data Hub, just moves the code out of HubSpot)
+
+Use this if you *have* Data Hub but prefer your logic in your own infra rather than a custom coded action.
+It does **not** dodge the Data Hub requirement — the "Send a webhook" action is itself gated.
 
 1. Deploy `webhook-handler.js` to any serverless host (AWS Lambda, Cloudflare Worker, plain Node).
    Set env: **`CONVERSATIONS_TOKEN`** (private app, conversations read+write), optionally
@@ -99,6 +115,31 @@ export default {
 };
 ```
 
+## Setup (poller — the genuinely no-Data-Hub path)
+
+No workflow, no Data Hub. You run a script on a schedule; it finds and replies to matching tickets itself.
+
+1. **Create a marker property** on tickets in your portal (Settings → Properties), e.g.
+   `auto_reply_sent_at` (single-line text or datetime). The poller uses it to avoid replying twice —
+   this is the dedupe a workflow's enrolment would normally give you.
+2. **Private app** with scopes: `conversations.read`, `conversations.write`, `tickets` read **and write**
+   (write is needed to stamp the marker). Available on all tiers — no Data Hub.
+3. Set env (see `.env.example`): `CONVERSATIONS_TOKEN`, `FROM_USER_ID`, `REPLY_MESSAGE`,
+   `MARKER_PROPERTY`, optionally `PIPELINE_STAGE_ID`, `MAX_PER_RUN`, `DRY_RUN`.
+4. **Start with `DRY_RUN=1`** and run once: `node poller.js`. It logs what it *would* send without sending.
+   Check the matched tickets are exactly what you intend before you flip it off.
+5. Schedule it: cron, a scheduled Lambda, GitHub Actions, a Cloudflare Cron Trigger — anything that runs
+   `node poller.js` every N minutes.
+
+How it stays safe:
+
+- **Dedupe:** the search filters on `MARKER_PROPERTY NOT_HAS_PROPERTY`, and each ticket is stamped only
+  *after* a confirmed send. Worst case (a stamp fails) is a rare, logged duplicate — never a silent miss.
+- **Blast radius:** `MAX_PER_RUN` (default 25) caps replies per cycle; the run reports `capped: true` when
+  it hits the limit so you notice a backlog instead of firing hundreds of messages at once.
+- **Tighten the search:** `PIPELINE_STAGE_ID` and the `extraFilters` config narrow enrolment. This filter
+  is the only thing between you and a mass auto-reply — keep it tight.
+
 ## What you must verify in your portal (can't be hard-coded)
 
 - **`fromUserId`** → the reply is sent AS an agent, `A-<hubspotUserId>`. Use a real user's id.
@@ -113,10 +154,11 @@ export default {
 node --test
 ```
 
-15 tests via Node's built-in runner + an injected fake `fetch` (Node 18+) — the core plus the webhook
-handler. They cover the deterministic logic — actor id, reply-context derivation, payload shape, webhook
-parsing, the shared-secret check, error handling. They do **not** assert live Conversations API behaviour
-or live HubSpot webhook delivery; those must be verified against a real portal (see above).
+24 tests via Node's built-in runner + an injected fake `fetch` (Node 18+) — the core, the webhook handler,
+and the poller. They cover the deterministic logic — actor id, reply-context derivation, payload shape,
+webhook parsing, the shared-secret check, the poller's search/dedupe/dry-run/`maxPerRun` cap, and error
+isolation. They do **not** assert live Conversations/CRM behaviour or live HubSpot delivery; those must be
+verified against a real portal (see above).
 
 ---
 

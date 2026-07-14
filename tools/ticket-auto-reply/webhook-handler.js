@@ -1,12 +1,15 @@
 /**
- * ticket-auto-reply — webhook handler (Operations Hub NOT required).
+ * ticket-auto-reply — webhook handler (moves the code out of HubSpot).
  *
- * The Operations-Hub-free path. Instead of a custom coded action (which needs
- * Operations Hub Professional/Enterprise), point a Service Hub "Send a webhook"
- * workflow action — available on any Professional hub — at your own endpoint.
- * This handler runs the SAME core logic (resolve thread → read latest message →
- * reply as an agent) using ticket-auto-reply.js, so nothing about the outcome
- * changes; only where the code executes does.
+ * ⚠️ This does NOT avoid Data Hub. The "Send a webhook" workflow action is itself
+ *    gated behind Data Hub (Operations Hub) Professional/Enterprise — the same tier
+ *    the custom coded action needs. Use this when you HAVE Data Hub but prefer your
+ *    logic in your own infra. To avoid Data Hub entirely, use poller.js instead.
+ *
+ * Point a "Send a webhook" workflow action at your own endpoint. This handler runs
+ * the SAME core logic (resolve thread → read latest message → reply as an agent)
+ * using ticket-auto-reply.js, so nothing about the outcome changes; only where the
+ * code executes does.
  *
  * ⚠️ VALID AS OF 2026-07. HubSpot is changing the Conversations API for Help Desk
  *    threads on 2026-09-23 — expect to rework this around then. See the tool README.
