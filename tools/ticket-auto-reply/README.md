@@ -44,8 +44,18 @@ assume a rework around that date.
 
 | File | Use it when |
 |---|---|
-| [`custom-coded-action.js`](custom-coded-action.js) | You want a **ticket-workflow custom coded action**. Single-file, copy-paste. |
+| [`custom-coded-action.js`](custom-coded-action.js) | You want a **ticket-workflow custom coded action**. Single-file, copy-paste. **Needs Operations Hub Pro/Enterprise.** |
+| [`webhook-handler.js`](webhook-handler.js) | You **don't** have Operations Hub. Deploy this behind a "Send a webhook" action (any Professional hub). Exports `handleWebhook`, `parseWebhookPayload`, `verifySharedSecret`, `lambdaHandler`, `nodeHandler`. |
 | [`ticket-auto-reply.js`](ticket-auto-reply.js) | Private app / serverless / script. Exports `autoReply`, `sendReply`, `deriveReplyContext`, `getLatestMessage`, `buildAgentActorId`, `resolveThreadIdForTicket`. |
+
+## Subscription requirements — read this before you pick a file
+
+There are **two** gates, and they're separate:
+
+- **The ticket workflow itself** needs **Service Hub Professional or Enterprise** (ticket-based workflows). You probably already have this.
+- **The custom coded action** (`custom-coded-action.js`) needs **Operations Hub Professional or Enterprise** — recently marketed under the "Data Hub" banner. A Service Hub subscription **alone will not** expose the custom-code step.
+
+If you're on **Service Hub Pro+ but not Operations Hub**, use the **webhook path** instead: a "Send a webhook" action is available in any Professional hub, and `webhook-handler.js` runs the identical logic on your own serverless endpoint. Same outcome, no Operations Hub licence.
 
 ## Setup (custom coded action)
 
@@ -54,6 +64,40 @@ assume a rework around that date.
    **`fromUserId`**.
 3. Output fields: **`sent`** (enumeration), **`messageId`**, **`errorCode`**.
 4. Secret **`CONVERSATIONS_TOKEN`** — private app token with conversations read + write.
+
+## Setup (webhook — no Operations Hub)
+
+1. Deploy `webhook-handler.js` to any serverless host (AWS Lambda, Cloudflare Worker, plain Node).
+   Set env: **`CONVERSATIONS_TOKEN`** (private app, conversations read+write), optionally
+   **`WEBHOOK_SHARED_SECRET`** and **`DEFAULT_FROM_USER_ID`**.
+2. In your ticket workflow, add a **"Send a webhook"** action (POST) targeting your endpoint URL.
+3. Use the action's **custom request body** to send flat keys:
+   `threadId`, `ticketId`, `message`, `fromUserId`. (If you use the default object payload instead,
+   the handler falls back to `objectId` for the ticket and reads `message`/`fromUserId` from mapped
+   properties or the `DEFAULT_FROM_USER_ID` env.)
+4. If you set `WEBHOOK_SHARED_SECRET`, add a matching custom header **`x-webhook-secret`** in the action.
+
+The handler always responds `200` with a JSON `{ sent, messageId, errorCode }` body — even on a handled
+failure — so HubSpot doesn't retry-storm a bad enrolment. Inspect `errorCode`, not the HTTP status.
+
+Adapters included: `lambdaHandler` (API Gateway proxy) and `nodeHandler` (`(req, res)` for plain http /
+Express). For a Cloudflare Worker (ESM), wrap the core:
+
+```js
+import { handleWebhook, verifySharedSecret } from './webhook-handler.js'; // via a CJS→ESM bundler
+export default {
+  async fetch(request, env) {
+    if (!verifySharedSecret(Object.fromEntries(request.headers), env.WEBHOOK_SHARED_SECRET)) {
+      return new Response('{"errorCode":"UNAUTHORISED"}', { status: 401 });
+    }
+    const out = await handleWebhook(await request.json(), {
+      token: env.CONVERSATIONS_TOKEN,
+      defaultFromUserId: env.DEFAULT_FROM_USER_ID,
+    });
+    return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } });
+  },
+};
+```
 
 ## What you must verify in your portal (can't be hard-coded)
 
@@ -69,9 +113,10 @@ assume a rework around that date.
 node --test
 ```
 
-7 tests via Node's built-in runner + an injected fake `fetch` (Node 18+). They cover the deterministic
-logic — actor id, reply-context derivation, payload shape, error handling. They do **not** assert live
-Conversations API behaviour; that must be verified against a real portal (see above).
+15 tests via Node's built-in runner + an injected fake `fetch` (Node 18+) — the core plus the webhook
+handler. They cover the deterministic logic — actor id, reply-context derivation, payload shape, webhook
+parsing, the shared-secret check, error handling. They do **not** assert live Conversations API behaviour
+or live HubSpot webhook delivery; those must be verified against a real portal (see above).
 
 ---
 
